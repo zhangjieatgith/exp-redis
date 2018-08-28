@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+	<!-- 配置连接池 -->
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<!-- 最大空闲数 -->
+		<property name="maxIdle" value="50"></property>
+		<!-- 最大连接数 -->
+		<property name="maxTotal" value="100"></property>
+		<!-- 最大等待时间 -->
+		<property name="maxWaitMillis" value="20000"></property>
+	</bean>
+	
+	<!-- 
+		配置工厂对象
+		在使用spring提供的 RedisTemplate 之前需要配置spring所提供的连接工厂，在spring中有4种工厂模型
+		1.JredisConnectionFactory
+		2.JedisConnectionFactory（用的最多）
+		3.LettuceConnectionFactory
+		4.SrpConnectionFactory
+		它们都是RedisConnectionFactory 接口的实现类
+	 -->
+	 <bean id="connectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory"> 
+	 	<property name="hostName" value="192.168.1.45"></property>
+	 	<property name="port" value="6379"></property>
+	 	<property name="poolConfig" ref="poolConfig"></property>
+	 </bean>
+</beans>
