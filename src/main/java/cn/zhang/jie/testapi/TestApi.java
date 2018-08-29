@@ -8,12 +8,12 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class TestApi {
 
-	private static final String ipAddr = "192.168.1.45"; 
+	private static final String ipAddr = "172.16.22.21"; 
 	
 	public static void main(String[] args) {
-//		m1();
+		m1();
 //		m2();
-		m3();
+//		m3();
 	}
 	
 	
@@ -25,36 +25,36 @@ public class TestApi {
 	}
 	
 	/**
-	 * Ê¹ÓÃÁ¬½Ó³Ø¹ÜÀíÁ¬½Ó
+	 * ä½¿ç”¨è¿æ¥æ± ç®¡ç†è¿æ¥
 	 */
 	public static void m2() {
-		//´´½¨Á¬½Ó³ØÅäÖÃ¶ÔÏó
+		//åˆ›å»ºè¿æ¥æ± é…ç½®å¯¹è±¡
 		JedisPoolConfig config = new JedisPoolConfig();
-		//×î´ó¿ÕÏĞÊı
+		//æœ€å¤§ç©ºé—²æ•°
 		config.setMinIdle(50);
-		//×î´óÁ¬½ÓÊı
+		//æœ€å¤§è¿æ¥æ•°
 		config.setMaxTotal(100);
-		//×î´óµÈ´ıºÁÃëÊı
+		//æœ€å¤§ç­‰å¾…æ¯«ç§’æ•°
 		config.setMaxWaitMillis(20000);
-		//Í¨¹ıÅäÖÃ¶ÔÏó´´½¨Á¬½Ó³Ø¶ÔÏó
+		//é€šè¿‡é…ç½®å¯¹è±¡åˆ›å»ºè¿æ¥æ± å¯¹è±¡
 		JedisPool pool = new JedisPool(config,ipAddr);
-		//´ÓÁ¬½Ó³ØÖĞ»ñÈ¡Ò»¸öÁ¬½Ó
+		//ä»è¿æ¥æ± ä¸­è·å–ä¸€ä¸ªè¿æ¥
 		Jedis jedis = pool.getResource();
 		System.out.println(jedis.ping());
 		jedis.close();
 	}
 	
 	/**
-	 *  ¼òµ¥API£¬²âÊÔµ±Ç°·şÎñÆ÷ÉÏredisµÄĞ´ÈëĞÔÄÜ£¨Í¨³£»á2Íò¶à£¬ÎÒÕâÀïÖ»ÓĞ2Ç§¶à¡£Èç¹ûÊ¹ÓÃÁ÷Ë®Ïß¼¼Êõ£¬¿ÉÒÔ´ïµ½Ã¿Ãë10ÍòµÄĞ´ÈëËÙ¶È£©
+	 *ç®€å•APIï¼Œæµ‹è¯•å½“å‰æœåŠ¡å™¨ä¸Šredisçš„å†™å…¥æ€§èƒ½ï¼ˆé€šå¸¸ä¼š2ä¸‡å¤šï¼Œæˆ‘è¿™é‡Œåªæœ‰2åƒå¤šã€‚å¦‚æœä½¿ç”¨æµæ°´çº¿æŠ€æœ¯ï¼Œå¯ä»¥è¾¾åˆ°æ¯ç§’10ä¸‡çš„å†™å…¥é€Ÿåº¦ï¼‰
 	 */
 	public static void m1() {
-		Jedis jedis = new Jedis("192.168.1.45", 6379);
-		int i = 0;	//¼ÇÂ¼²Ù×÷´ÎÊı
+		Jedis jedis = new Jedis(ipAddr, 6379);
+		int i = 0;	//è®°å½•æ“ä½œæ¬¡æ•°
 		try {
 			long start = System.currentTimeMillis();
 			while(true) {
 				long end = System.currentTimeMillis();
-				if(end - start >= 1000) {		//µ±´óÓÚ1000ºÁÃëµÄÊ±ºò£¬½áÊø²Ù×÷
+				if(end - start >= 1000) {		//å½“å¤§äº1000æ¯«ç§’çš„æ—¶å€™ï¼Œç»“æŸæ“ä½œ
 					break;
 				}
 				i++;
@@ -63,7 +63,7 @@ public class TestApi {
 		} finally {
 			jedis.close();
 		}
-		System.out.println("redis Ã¿ÃëĞ´²Ù×÷£º"+i+" ´Î");	//´òÓ¡1ÃëÄÚ¶ÔredisµÄ²Ù×÷´ÎÊı
-		//output:2849´Î
+		System.out.println("redis æ¯ç§’å†™æ“ä½œï¼š"+i+" æ¬¡");	//æ‰“å°1ç§’å†…å¯¹redisçš„æ“ä½œæ¬¡æ•°
+		//output:2849æ¬¡
 	}
 }
