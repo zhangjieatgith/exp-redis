@@ -20,7 +20,54 @@ public class TestMain {
 
 	public static void main(String[] args) {
 //		m1();
-		m2();
+//		m2();
+		m3();
+	}
+	
+	
+	/**
+	 * 操作集合
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void m3() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		//这里也是用的字符串序列化器
+		RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);	
+		Set set = null;
+		//将元素加入列表
+		redisTemplate.boundSetOps("set1").add("v1","v2","v3","v4","v5","v6");
+		redisTemplate.boundSetOps("set2").add("v0","v2","v4","v6","v8");
+		//求集合的长度
+		System.out.println(redisTemplate.opsForSet().size("set1"));
+		//求差集
+		set = redisTemplate.opsForSet().difference("set1","set2");
+		System.out.println(set);
+		//求交集
+		set = redisTemplate.opsForSet().intersect("set1","set2");
+		System.out.println(set);
+		//判断是否是集合中的元素
+		System.out.println(redisTemplate.opsForSet().isMember("set", "s9"));
+		//从集合中随机弹出一个元素
+		String val = (String) redisTemplate.opsForSet().pop("set1");
+		System.out.println(val);
+		//随机获取一个集合的元素
+		val = (String) redisTemplate.opsForSet().randomMember("set1");
+		System.out.println(val);
+		//随机获取集合中的两个元素
+		List list = redisTemplate.opsForSet().randomMembers("set1", 2);
+		System.out.println(list);		//这两个元素可能是重复的
+		//删除一个集合的元素，参数可以是多个
+		redisTemplate.opsForSet().remove("set1", "v1");
+		//求两个集合的并集
+		set = redisTemplate.opsForSet().union("set1", "set2");
+		System.out.println(set);
+		//求两个集合的差集，并保存到集合 diff_set 中
+		redisTemplate.opsForSet().differenceAndStore("set1", "set2", "diff_set");
+		//求两个集合的交集，并保存到集合inter_set 中
+		redisTemplate.opsForSet().intersectAndStore("set1", "set2", "inter_set");
+		//求两个集合的并集，并保存到集合union_set 中
+		redisTemplate.opsForSet().unionAndStore("set1", "set2", "union_set");
+		context.close();
 	}
 	
 	
