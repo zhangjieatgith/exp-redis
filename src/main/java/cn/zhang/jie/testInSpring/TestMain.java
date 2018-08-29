@@ -12,10 +12,30 @@ import org.springframework.data.redis.core.SessionCallback;
 public class TestMain {
 	public static void main(String[] args) {
 //		m1();
-		m2();
+//		m2();
+		m3();
 	}
 	
 	
+	/**
+	 * 不使用 CallBack，最简单的使用 RedisTemplate 操作
+	 */
+	public static void m3() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		RedisTemplate<String,TestMain.Person> redisTemplate = context.getBean(RedisTemplate.class);
+		Person p = new Person();
+		p.setId(1004L);
+		p.setName("abc");
+		p.setNote("nooo");
+		redisTemplate.opsForValue().set("pp2", p);
+		Person pp = redisTemplate.opsForValue().get("pp2");
+		System.out.println(pp);
+		context.close();
+	}
+	
+	/**
+	 * 测试RedisTemplate的使用
+	 */
 	public static void m2() {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
 		RedisTemplate<String,String> redisTemplate = context.getBean(RedisTemplate.class);
@@ -33,11 +53,12 @@ public class TestMain {
     	ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         RedisTemplate<String, TestMain.Person> redisTemplate = context.getBean(RedisTemplate.class);
         final Person person = new Person();
-        person.setId(1002L);
-        person.setName("role_name_222");
+        person.setId(10003L);
+        person.setName("name_333");
         person.setNote("note_222");
         SessionCallback<TestMain.Person> callBack = new SessionCallback<TestMain.Person>() {
 			public Person execute(RedisOperations operations) throws DataAccessException {
+				//注意，对于对象的序列化不能使用 StringRedisSerializer
 				operations.boundValueOps("pp1").set(person);
 				return (Person) operations.boundValueOps("pp1").get();
 			}
