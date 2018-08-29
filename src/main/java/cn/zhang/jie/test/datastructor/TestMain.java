@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.data.redis.connection.RedisListCommands;
+import org.springframework.data.redis.core.RedisCommand;
 import org.springframework.data.redis.core.RedisTemplate;
 
 /**
@@ -17,8 +19,74 @@ import org.springframework.data.redis.core.RedisTemplate;
 public class TestMain {
 
 	public static void main(String[] args) {
-		m1();
+//		m1();
+		m2();
 	}
+	
+	
+	/**
+	 * 处理链表结构
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void m2() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		//这里也是用的字符串序列化器
+		RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);	
+		try {
+			//删除链表，反复测试
+			redisTemplate.delete("list");
+			//向list中插入node3
+			redisTemplate.opsForList().leftPush("list", "node3");
+			List<String> nodeList = new ArrayList<String>();
+			for(int i=2;i>=1;i--) {		//由于后面是由左向右插入的，所以注意这里list中元素的添加方向
+				nodeList.add("node"+i);
+			}
+			//批量的从左到右插入一批数据
+			redisTemplate.opsForList().leftPushAll("list", nodeList);
+			//从右边插入一个节点
+			redisTemplate.opsForList().rightPush("list", "node4");
+			//获取下标为0的节点
+			System.out.println(redisTemplate.opsForList().index("list", 0));
+			//获取链表长度
+			System.out.println(redisTemplate.opsForList().size("list"));
+			//从左边弹出一个节点
+			System.out.println(redisTemplate.opsForList().leftPop("list"));
+			//从右边弹出一个节点
+			System.out.println(redisTemplate.opsForList().rightPop("list"));
+			//在node2前插入一个节点（需要使用更为底层的命令）
+			redisTemplate.getConnectionFactory().getConnection().lInsert("list".getBytes("utf-8"),
+					RedisListCommands.Position.BEFORE,
+					"node2".getBytes(), 
+					"before_node".getBytes("utf-8"));
+			//在node2后面插入一个节点
+			redisTemplate.getConnectionFactory().getConnection().lInsert("list".getBytes("utf-8"),
+					RedisListCommands.Position.AFTER,
+					"node2".getBytes("utf-8"),
+					"after_node".getBytes("utf-8"));
+			//判断list是否存在，如果存在则从左边插入head节点
+			redisTemplate.opsForList().leftPushIfPresent("list","head");
+			//判断list是否存在，如果存在则从右边插入end节点
+			redisTemplate.opsForList().rightPushIfPresent("list", "end");
+			//从左到右，获取下标为1-3的节点元素（子list）
+			List valueList = redisTemplate.opsForList().range("list",1,3);
+			System.out.println(valueList);
+			//在链表的左边插入三个值为node的节点
+			nodeList.clear();
+			for(int i=0;i<3;i++) {nodeList.add("node");}
+			redisTemplate.opsForList().leftPushAll("list", nodeList);
+			//从左到右删除最多2个node节点
+			redisTemplate.opsForList().remove("list",2,"node");
+			//给链表下标为0的节点设置新值
+			redisTemplate.opsForList().set("list",0, "new_head_node");
+			//获取整个链表的值
+			List listAll = redisTemplate.opsForList().range("list",0, redisTemplate.opsForList().size("list"));
+			System.out.println(listAll);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		context.close();
+	}
+	
 	
 	/**
 	 * 处理hash结构
