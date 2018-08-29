@@ -20,8 +20,8 @@ public class TestApi {
 	/**
 	 * 
 	 */
-	public static void m3() {
-		JedisConnectionFactory  a =null;
+	public static void m3() {	
+		
 	}
 	
 	/**
