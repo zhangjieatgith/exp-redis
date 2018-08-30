@@ -35,8 +35,12 @@ public class TestMain {
 		RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);	
 		Set set = null;
 		//将元素加入列表
+		//boundSetOps这个方法并不会覆盖原有的数据,它和opsForSet().add类似,形式不同
+		redisTemplate.boundSetOps("set1").add("v-1");
 		redisTemplate.boundSetOps("set1").add("v1","v2","v3","v4","v5","v6");
 		redisTemplate.boundSetOps("set2").add("v0","v2","v4","v6","v8");
+		//在原来的基础上添加更多的元素
+		redisTemplate.opsForSet().add("set1","v-2","v-3");
 		//求集合的长度
 		System.out.println(redisTemplate.opsForSet().size("set1"));
 		//求差集
