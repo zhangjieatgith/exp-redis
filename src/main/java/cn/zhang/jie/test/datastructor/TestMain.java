@@ -20,14 +20,8 @@ public class TestMain {
 
 	public static void main(String[] args) {
 //		m1();
-		//sdfdf
 //		m2();
-		//加一些新的东西行吗
 		m3();
-		//jisndfsdfsdf
-		///DFSD
-		//测试还原
-		//AAAA
 	}
 	
 	
