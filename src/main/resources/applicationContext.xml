@@ -47,4 +47,38 @@
 	 	<property name="connectionFactory" ref="connectionFactory"></property>
 	 	<property name="defaultSerializer" ref="keyStringRedisSerializer"></property>
 	 </bean>
+	 
+	 
+	 <!-- 配置“订阅监听类” 
+	 	注入 redisTemplate
+	 	说明：这里配置了线程池，这个线程池将会持续的生存以等待消息传入，而这里也配置了容器用id为redisMsgListener的bean进行对渠道chat的监听。
+	 	当消息通过渠道chat发送的时候，就会使用id为redisMsgListener的Bean进行处理消息
+	 -->
+	 <bean id="redisMessageListener" class="cn.zhang.jie.auxcls.RedisMessageListener">
+	 	<property name="redisTemplate" ref="redisTemplate"></property>
+	 </bean>
+	 
+	 <!-- 承上，定义好了监听类还不够，还需要定义一个容器类 ,用于监听redis的发布订阅消息-->
+	 <bean id="topicContainer" class="org.springframework.data.redis.listener.RedisMessageListenerContainer" destroy-method="destroy">
+	 	<!-- redis连接工厂 -->
+	 	<property name="connectionFactory" ref="connectionFactory"></property>
+	 	<!-- 连接池，这里只要线程池生存，才能继续监听 -->
+	 	<property name="taskExecutor">
+	 		<bean class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
+	 			<property name="poolSize" value="3"></property>
+	 		</bean>
+	 	</property>	
+	 	<!-- 消息监听map -->
+	 	<property name="messageListeners">
+	 		<map>
+	 			<!-- 配置监听者， -->
+	 			<entry key-ref="redisMessageListener">
+		 			<!-- 监听类 -->
+		 			<bean class="org.springframework.data.redis.listener.ChannelTopic">
+		 				<constructor-arg value="chat"></constructor-arg>
+		 			</bean>
+	 			</entry>
+	 		</map>
+	 	</property>
+	 </bean>
 </beans>

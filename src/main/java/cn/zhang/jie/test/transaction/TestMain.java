@@ -1,6 +1,8 @@
 package cn.zhang.jie.test.transaction;
 
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
@@ -19,10 +21,60 @@ public class TestMain {
 
 	private static final String ipAddr = "192.168.1.45"; 
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 //		m1();
 //		m2();
-		m3();
+//		m3();
+//		m4();
+		m5();
+	}
+	
+	
+	/**
+	 * 在spring中测试redis的超时功能
+	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public static void m5() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);
+		redisTemplate.execute(new SessionCallback() {
+			public Object execute(RedisOperations ops) throws DataAccessException {
+				ops.boundValueOps("k1").set("v1");
+				String keyValue = (String) ops.boundValueOps("k1").get();
+				//获取键的超时时间，-1表示不会超时
+				Long expSecond = ops.getExpire("k1");
+				System.out.println("expSecond : "+expSecond);
+				boolean b = false;
+				//设置超时时间是接下来的30秒
+				b = ops.expire("k1", 30L, TimeUnit.SECONDS);
+				//取消键的超时时间
+				b = ops.persist("k1");
+				Long l = 0L;
+				l = ops.getExpire("k1");
+				Long now = System.currentTimeMillis();
+				Date date = new Date();
+				date.setTime(now+30*1000);
+				//设置某个具体时间作为超时时间
+				ops.expireAt("k1", date);
+				return null;
+			}
+		});
+		context.close();
+	}
+	
+	/**
+	 * 测试发布订阅消息
+	 * @throws Exception 
+	 */
+	public static void m4() throws Exception {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);
+		String channel = "chat";
+		for(int i =0;i<5;i++) {
+			Thread.sleep(1000);
+			redisTemplate.convertAndSend(channel, "I'm lazy!"+i);
+		}
+		context.close();
 	}
 	
 	/**
