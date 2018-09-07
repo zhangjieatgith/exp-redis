@@ -27,7 +27,130 @@ public class TestMain {
 //		m1();
 //		m2();
 //		m3();
-		m4();
+//		m4();
+		m5();
+	}
+	
+	
+	/**
+	 * 对m4()的进一步验证和补充，并解决了其中一些有疑问的地方（最新、最全的zset操作版本）
+	 */
+	public static void m5() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		//这里也是用的字符串序列化器
+		RedisTemplate<String, String> redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);
+		Set<TypedTuple<String>> set1 = new HashSet<TypedTuple<String>>();
+		Set<TypedTuple<String>> set2 = new HashSet<TypedTuple<String>>();
+		//set1添加元素
+		Double score11 = Double.valueOf(1);
+		String value11 = "aaa";
+		TypedTuple<String> tuple11 = new DefaultTypedTuple<String>(value11, score11);
+		Double score12 = Double.valueOf(2);
+		String value12 = "bbb";
+		TypedTuple<String> tuple12 = new DefaultTypedTuple<String>(value12, score12);
+		Double score13 = Double.valueOf(3);
+		String value13 = "ccc";
+		TypedTuple<String> tuple13 = new DefaultTypedTuple<String>(value13, score13);
+		Double score14 = Double.valueOf(4);
+		String value14 = "ddd";
+		TypedTuple<String> tuple14 = new DefaultTypedTuple<String>(value14, score14);
+		Double score15 = Double.valueOf(5);
+		String value15 = "eee";
+		TypedTuple<String> tuple15 = new DefaultTypedTuple<String>(value15, score15);
+		set1.add(tuple11);
+		set1.add(tuple12);
+		set1.add(tuple13);
+		set1.add(tuple14);
+		set1.add(tuple15);
+		//set2添加元素
+		Double score21 = Double.valueOf(3);
+		String value21 = "bbb";
+		TypedTuple<String> tuple21 = new DefaultTypedTuple<String>(value21, score21);
+		Double score22 = Double.valueOf(4);
+		String value22 = "fff";
+		TypedTuple<String> tuple22 = new DefaultTypedTuple<String>(value22, score22);
+		Double score23 = Double.valueOf(6);
+		String value23 = "ggg";
+		TypedTuple<String> tuple23 = new DefaultTypedTuple<String>(value23, score23);
+		Double score24 = Double.valueOf(7);
+		String value24 = "hhh";
+		TypedTuple<String> tuple24 = new DefaultTypedTuple<String>(value24, score24);
+		Double score25 = Double.valueOf(8);
+		String value25 = "iii";
+		TypedTuple<String> tuple25 = new DefaultTypedTuple<String>(value25, score25);
+		set2.add(tuple21);
+		set2.add(tuple22);
+		set2.add(tuple23);
+		set2.add(tuple24);
+		set2.add(tuple25);
+		
+		//打印集合
+		printSet(set1);
+		System.out.println("--------------------------");
+		printSet(set2);
+		
+		redisTemplate.opsForZSet().add("zset1", set1);
+		redisTemplate.opsForZSet().add("zset2", set2);
+		
+		Long size = null;
+		//list.size(),求集合长度，即集合中有多少个元素
+		size = redisTemplate.opsForZSet().zCard("zset1");
+		System.out.println(size);
+		//list.size(),求某个范围的元素数量（按分数来确定范围，范围是闭区间形式）
+		size = redisTemplate.opsForZSet().count("zset1", 2, 4);
+		System.out.println(size);
+		//list.subList()，截取集合，只返回value，不返回score。由于分数的存在，这些值是有序的，因此可以使用下标的方式来访问。下面的1,2就是下标索引，表示[1,2]，如果下标越界，则取全部的
+		Set<String> set = null;
+		set = redisTemplate.opsForZSet().range("zset1", 1, 200);
+		System.out.println(set);
+		//list.subList()，截取集合，返回的事包含 value 和 score的元素。同上，这里的0和2也是下标值，也是排好序的，和上面的唯一区别就是返回的数据类型不同
+		Set<TypedTuple<String>> zzset = null;
+		zzset = redisTemplate.opsForZSet().rangeWithScores("zset1", 0, 2);
+		printSet(zzset);
+		//集合间的操作，将两个集合的交集（value）保存到一个新的集合中。这个新集合也是在redis中新建的。返回新集合中的元素个数
+		size = redisTemplate.opsForZSet().intersectAndStore("zset1", "zset2", "inter_zset");
+		System.out.println(size);
+		//区间操作,感觉像先取"bbb"的score，再取"eee"的score，然后根据这两个score取出中间的元素（value，不包含score），这里的区间是开区间
+		Range range = Range.range();
+		range.gt("bbb");	//gte、lte是闭区间
+		range.lt("eee");
+		set = redisTemplate.opsForZSet().rangeByLex("zset1", range);
+		System.out.println(set);
+		//小结：范围取数有两种形式，按下标、按排序好的元素
+		//限制返回的个数
+		Limit limit = Limit.limit();
+		limit.count(1);			//返回的元素个数
+		limit.offset(1);		//偏移量
+		//求区间内的元素，并返回限制的条数，这是上面 rangeByLex 方法的增强版
+		set = redisTemplate.opsForZSet().rangeByLex("zset1", range, limit);
+		System.out.println(set);
+		//求元素的排行，也就是求元素所在的位置，类似于 indexOf()，排第一的是0，排第二的是1
+		Long rank = redisTemplate.opsForZSet().rank("zset1", "bbb");
+		System.out.println(rank);
+		//删除元素，返回成功删除的元素个数
+//		size = redisTemplate.opsForZSet().remove("zset1", "bbb","ccc","mmm");
+//		System.out.println(size);
+		//删除元素，按照排行删除，从0开始计算，下面删除的就是排行（索引）为1和2的两个元素
+//		size = redisTemplate.opsForZSet().removeRange("zset1", 1, 2);
+//		System.out.println(size);
+		//获取集合中所有元素的值和分数，-1表示全部元素
+		zzset = redisTemplate.opsForZSet().rangeWithScores("zset1", 0,-1 );
+		printSet(zzset);
+		System.out.println("----------------------------");
+		//给集合中的某个元素的score加上一个数字（也就是修改元素的等级、排行、在集合中的索引）
+		redisTemplate.opsForZSet().incrementScore("zset1","aaa",11);		//调整“aaa”元素的排行
+		zzset = redisTemplate.opsForZSet().rangeWithScores("zset1", 0,-1 );
+		printSet(zzset);
+		//删除分数为1到2之间的元素（开区间），删除后发现“aaa”成功的保留了下来
+		size = redisTemplate.opsForZSet().removeRangeByScore("zset1", 1, 3);	
+		System.out.println(size);
+		zzset = redisTemplate.opsForZSet().rangeWithScores("zset1", 0, -1);
+		printSet(zzset);
+		//按下标取出集合中的元素，然后将这些元素进行反转（也就是按分数进行倒序排），最后将这个集合返回，原集合保持不变
+		Set<TypedTuple<String>> resultSet = redisTemplate.opsForZSet().reverseRangeWithScores("zset1", 1, 10);
+		printSet(zzset);
+		printSet(resultSet);
+		context.close();
 	}
 	
 	
@@ -285,5 +408,11 @@ public class TestMain {
 		//hdel命令：删除某个属性,成功删除返回1，否则返回0
 		System.out.println(redisTemplate.opsForHash().delete(key, "f6"));
 		context.close();
+	}
+	
+	private static void printSet(Set<TypedTuple<String>> source) {
+		for(TypedTuple<String> tmp : source) {
+			System.out.println("{value="+tmp.getValue()+",score="+tmp.getScore()+"}");
+		}
 	}
 }

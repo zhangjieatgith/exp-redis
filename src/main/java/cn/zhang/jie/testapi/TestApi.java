@@ -8,11 +8,11 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class TestApi {
 
-	private static final String ipAddr = "172.16.22.21"; 
+	private static final String ipAddr = "172.16.22.77"; 
 	
 	public static void main(String[] args) {
-		m1();
-//		m2();
+//		m1();
+		m2();
 //		m3();
 	}
 	
