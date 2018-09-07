@@ -132,6 +132,40 @@ public class TestMain {
 	
 	
 	/**
+	 *对m1的补充，2018年9月7日17:04:02
+	 * 补充结论：
+	 * 	1.在multi开启之后，可以在其他客户端进行set k11的操作，而下面exec执行完成后，会将其他客户端的set k11的值覆盖掉
+	 * 2.如果exec执行的命令有错误，比如对一个value为"v11"的键做increment操作，也不影响整个事务的提交，只有在exec之前抛出异常了，才会回滚事务
+	 * 基于以上两点：这种事务存在的意义是什么呢? 维持一组操作的原子性，有它存在的意义
+	 */
+	public static void m1a() {
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		//这里也是用的字符串序列化器
+		final RedisTemplate redisTemplate = context.getBean("hashRedisTemplate", RedisTemplate.class);
+		SessionCallback<String> callback = new SessionCallback<String>() {
+			@Override
+			public String execute(RedisOperations ops) throws DataAccessException {
+				ops.multi();
+				ops.boundValueOps("k11").set("v11");
+				String value = (String) ops.boundValueOps("k11").get();
+				System.out.println(value);
+				ops.boundValueOps("k11").increment(1);
+				if(10002%2==0) {
+					throw new RuntimeException("业务异常");
+				}
+				List list = ops.exec();
+				System.out.println(list);
+				value = (String) redisTemplate.opsForValue().get("k11");
+				return value;
+			}
+		};
+		String value = (String) redisTemplate.execute(callback);
+		System.out.println(value);
+		context.close();
+	}
+	
+	
+	/**
 	 * 测试redis下的事务，事务开启、事务的返回值
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
