@@ -23,10 +23,11 @@ public class TestMain {
 	
 	public static void main(String[] args) throws Exception {
 //		m1();
+		m1a();
 //		m2();
 //		m3();
 //		m4();
-		m5();
+//		m5();
 	}
 	
 	
@@ -138,6 +139,7 @@ public class TestMain {
 	 * 2.如果exec执行的命令有错误，比如对一个value为"v11"的键做increment操作，也不影响整个事务的提交，只有在exec之前抛出异常了，才会回滚事务
 	 * 基于以上两点：这种事务存在的意义是什么呢? 维持一组操作的原子性，有它存在的意义
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	public static void m1a() {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
 		//这里也是用的字符串序列化器
@@ -145,18 +147,26 @@ public class TestMain {
 		SessionCallback<String> callback = new SessionCallback<String>() {
 			@Override
 			public String execute(RedisOperations ops) throws DataAccessException {
-				ops.multi();
-				ops.boundValueOps("k11").set("v11");
-				String value = (String) ops.boundValueOps("k11").get();
-				System.out.println(value);
-				ops.boundValueOps("k11").increment(1);
-				if(10002%2==0) {
-					throw new RuntimeException("业务异常");
+				try {
+					ops.watch("k1");			//监控某个变量，一定是在开启事务之前
+					ops.multi();
+					ops.boundValueOps("k11").set("v11");
+					String value = (String) ops.boundValueOps("k11").get();
+					System.out.println(value);
+//				ops.boundValueOps("k11").increment(1);
+//				if(10002%2==0) {
+//					ops.discard();
+//					throw new RuntimeException("业务异常");
+//				}
+					List list = ops.exec();
+					System.out.println(list);
+					value = (String) redisTemplate.opsForValue().get("k11");
+					return value;
+				} catch (Exception e) {
+					e.printStackTrace();
+//					ops.discard(); //当出现异常后，不需要手动回滚事务
+					return null;
 				}
-				List list = ops.exec();
-				System.out.println(list);
-				value = (String) redisTemplate.opsForValue().get("k11");
-				return value;
 			}
 		};
 		String value = (String) redisTemplate.execute(callback);
